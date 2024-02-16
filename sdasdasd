@@ -45,5 +45,5 @@ echo "[+]IP:" | anew /sec/root/Work/Company/$company/Scan-Progress
 echo "-IP Collecting:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 echo "Start IP Screen-Shoot"
-eyewitness -f /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt --web --no-prompt -d /sec/root/Work/Company/$company/IP/
+python3 /sec/root/Work/EyeWitness/Python/EyeWitness.py -f /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt --web --no-prompt -d /sec/root/Work/Company/$company/IP/Screen-Shoot/
 echo "-IP Screen-Shoot:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
