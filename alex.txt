@@ -20,56 +20,10 @@ cd /sec/root/Work/Company/$company/IP/
 mkdir -p Shodan_IP/ Trash/  Screen-Shoot/  Nuclei/  Nmap/ Sitemap-Urls/ Swagger-api/  WEB_CRAWLING/ Robots-EndPoints/
 ############################################################IP-Collecting
 hello_world () {
-echo -e "\e[94mStarting IP Collecting \e[0m"
-# Read each line from domains.txt and execute the Shodan command
-while IFS= read -r domain; do
-    echo "Results for domain: $domain"
-    shodan search ssl:"$domain" 200 --limit 1000 --fields ip_str,port,hostnames | anew -q /sec/root/Work/Company/$company/IP/Trash/result
-        sleep 1
-done < '/sec/root/Work/domains.txt'
-
-while IFS= read -r domain; do
-    echo "Results for domain: $domain"
-    cat /sec/root/Work/Company/$company/IP/Trash/result | awk -v domain="$domain" '{split($3, arr, ";"); for (i in arr) if (arr[i] ~ domain) print $1, $2, arr[i]}' | egrep -v '([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) ([0-9]+) ([^ ;]+-'"$domain"'|$)' | awk -v domain="$domain" '{split($3, arr, ";"); for (i in arr) if (!(arr[i] ~ /'$(echo "$domain" | sed 's/\./\\./g')'\.[^ ;]+/) && (arr[i] ~ domain)) print $1, $2, arr[i]}' | awk -v domain="$domain" '{split($3, arr, ";"); for (i in arr) if (!(arr[i] ~ /'$(echo "$domain" | sed 's/\./\\./g')'\.[^ ;]+/) && (arr[i] ~ /(^|[^A-Za-z0-9_])'$(echo "$domain" | sed 's/\./\\./g')'([^A-Za-z0-9_]|$)/)) print $1, $2, arr[i]}' | anew -q /sec/root/Work/Company/$company/IP/Trash/Final-Result
-done < '/sec/root/Work/domains.txt'
-
-cat /sec/root/Work/Company/$company/IP/Trash/Final-Result | awk '{print $1":"$2}' | anew -q /sec/root/Work/Company/$company/IP/Trash/IP.txt
-cut -d' ' -f3 /sec/root/Work/Company/$company/IP/Trash/Final-Result | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | anew -q /sec/root/Work/Company/$company/IP/Trash/Subdomains.txt
-
-echo -e "\e[94mStart Filtering \e[0m"
-cat /sec/root/Work/Company/$company/IP/Trash/IP.txt | httpx -o /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt
-
-file="/sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt"
-directory="/sec/root/Work/Company/$company/IP/Shodan_IP/"
-
-if [ -s "$file" ]; then
-    # File is not empty, continue with the rest of the script
-    echo "File is not empty, continuing with the script."
-    # Add your additional commands here
-else
-    # File is empty, execute the specified commands
-    rm -r "$directory"*
-    echo "Nothing" > "$directory"Nothing
-    echo "File is empty, removed files and created 'Nothing'."
-fi
-
 echo -e "\e[36mFinal IP count: \e[32m$(cat /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | tr '[:upper:]' '[:lower:]'| anew | grep -v " "|grep -v "@" | grep "\." | wc -l)\e[0m"
-echo -e "\e[94mDone Nmap \e[0m"
-cut -d' ' -f1 /sec/root/Work/Company/$company/IP/Trash/result | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' | anew -q /sec/root/Work/Company/$company/IP/Nmap/Ip-nmap.txt
 
 echo "[+]IP:" | anew /sec/root/Work/Company/$company/Scan-Progress
 echo "-IP Collecting:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
-
-echo "Start IP Screen-Shoot"
-eyewitness -f /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt --web --no-prompt -d /sec/root/Work/Company/$company/IP/
-echo "-IP Screen-Shoot:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
-
-mkdir  -p  /sec/root/Work/Company/$company/
-mkdir  -p  /sec/root/Work/Company/$company/IP/
- 
-cd /sec/root/Work/Company/$company/IP/
-mkdir -p Shodan_IP/ Trash/  Screen-Shoot/  Nuclei/  Nmap/ Sitemap-Urls/ Swagger-api/  WEB_CRAWLING/ Robots-EndPoints/
-
 
 echo "403 Start"
 mkdir /sec/root/Work/Company/$company/IP/403_401_304_Bypass/
