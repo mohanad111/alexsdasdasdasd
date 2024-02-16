@@ -20,11 +20,11 @@ mkdir -p /sec/root/Work/Company/$company/Subdomains/
 cd /sec/root/Work/Company/$company/Subdomains/
 mkdir  -p Subdomains/ API_EndPoint/  Nuclei/ Wayback_URLS/ Trash/ Java_Script/ Nuclei/ Sitemap-Urls/ Swagger-api/ 
 
-
 echo "#######################################################"| anew /sec/root/Work/Company/$company/Scan-Progress
 ###############################################################################
 echo -e "\e[94mStarting Subdomain-Enumeration:\e[0m"
 hello_world () {
+
 echo "AssetFinder"
 echo "[+]Subdomains:"| anew /sec/root/Work/Company/$company/Scan-Progress
 cat '/sec/root/Work/domains.txt' | assetfinder --subs-only  | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt
@@ -33,6 +33,7 @@ echo -e "\e[36mAssetFinder count: \e[32m$(cat /sec/root/Work/Company/$company/Su
 echo "Findomain Starts"
 for x in $(cat '/sec/root/Work/domains.txt')
 do
+echo "Domain : $x"
 findomain -t $x -q >> /tmp/findomain-$company.txtls
 cat /tmp/findomain-$company.txtls |anew |grep -v " "|grep -v "@" | grep "\." | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/findomains.txtls
 done
@@ -59,6 +60,7 @@ do
 done
 Domain
 
+
 ################################
 echo "Waybackurls For Domains"
 cat '/sec/root/Work/domains.txt' | waybackurls | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew -q  /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
@@ -69,13 +71,15 @@ cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
 cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.json$" | httpx -mc 200 | anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-json.txt
 cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.txt$" | httpx -mc 200| anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-txt.txt
 cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.tmp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$"| httpx  -mc 200,401,403,304 -o /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Exposed-Files.txt
+
+
 ##########################Final_Sub Subdomains.txt Count  ##################################33
 echo -e "\e[34mSub-Subdomain Start............ \e[0m"
 touch /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt
 touch /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt
 for x in $(cat '/sec/root/Work/domains.txt')
 do
-python3 /sec/root/Work/ctfr -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt
+python3 /sec/root/Work/ctfr/ctfr.py -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt
 done
 cat /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt | grep -i "*." | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | egrep -v "^.[^.]+\.[a-zA-Z]{3}$|^.[^.]+\.[a-zA-Z]{2}\.[a-zA-Z]{2}$" | anew -q  /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt
 echo -e "\e[36mSub-Sub count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | tr '[:upper:]' '[:lower:]'| anew |grep -v " "|grep -v "@" | grep "\."| wc -l)\e[0m"
@@ -84,7 +88,7 @@ echo -e "\e[36mSub-Sub count: \e[32m$(cat /sec/root/Work/Company/$company/Subdom
 echo "Sub-Subdomain ctftr"
 for x in $(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt)
 do
-python3 /sec/root/Work/ctfr -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt
+python3 /sec/root/Work/ctfr/ctfr.py -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt
 done
 ######Subdomain-Enumeration {amass,assetfinder,waybackurls}
 echo "Sub-Subdomain SubFinder"
@@ -94,6 +98,9 @@ cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | as
 echo "Sub-Subdomain Waybackurls"
 cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | waybackurls | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew -q /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
 cat  /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | awk -F '/' '{print $3}' | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/wayback-sub.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.json$" | httpx -mc 200 | anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-json.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.txt$" | httpx -mc 200| anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-txt.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.tmp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$"| httpx  -mc 200,401,403,304 -o /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Exposed-Files.txt
 
 echo "Last Amass"
 amass enum -passive -norecursive -noalts -df /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt -o /sec/root/Work/Company/$company/Subdomains/Trash/amassss-new.txt
@@ -306,6 +313,7 @@ cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Liv
 
 echo "Nuclei"
 cat /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
+
 
 }
 hello_world
