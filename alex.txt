@@ -30,9 +30,6 @@ mkdir /sec/root/Work/Company/$company/IP/403_401_304_Bypass/
 httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt -mc 403,401 -o  /sec/root/Work/Company/$company/IP/403_401_304_Bypass/IP-403-401.txt
 httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt -mc 304 -o  /sec/root/Work/Company/$company/IP/403_401_304_Bypass/IP-304.txt
 
-echo "Start Nuclei Ip Scan"
-cat /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | nuclei -t /sec/root/nuclei-templates/ -o /sec/root/Work/Company/$company/IP/Nuclei/IP.txt
-echo "-IP Nuclei-Full-Scan :Done" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 echo "Start GoSpider"
 gospider -S /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt  -d 10 -c 20 -t 50 -K 3 --robots --sitemap --no-redirect -a -w --blacklist ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" -o /tmp/GoSpider-$company
@@ -73,9 +70,6 @@ httpx -l /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/JavaScript-2
 echo -e "\e[36mSourceMappingURL IP count: \e[32m$(cat /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/Secrets/javascript-map.txt | tr '[:upper:]' '[:lower:]'| anew | grep -v " "|grep -v "@" | grep "\." | wc -l)\e[0m"
 echo "sourceMappingURL" | anew /sec/root/Work/Company/$company/Scan-Progress
 
-echo "Nuclei JavaScript"
-cat /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
-echo "Nuclei JavaScript" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 ########################Exposure Check
 mkdir -p /sec/root/Work/Company/$company/IP/WEB_CRAWLING/Exposures/
@@ -87,9 +81,7 @@ echo "SiteMap Url Extractor"
 httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt --path "/sitemap.xml" -mc 200  -o  /sec/root/Work/Company/$company/IP/Sitemap-Urls/sitemap.txt
 echo "-IP SiteMap Url Extractor:Done"| anew /sec/root/Work/Company/$company/Scan-Progress
 ########################swagger Url Extractor
-echo "Swagger Url Extractor"
-cat  /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt  | nuclei -t /sec/root/nuclei-templates/http/exposures/apis/swagger-api.yaml -o  /sec/root/Work/Company/$company/IP/Swagger-api/Swagger-IP.txt
-echo "-IP DirSearch Normal Mode"| anew /sec/root/Work/Company/$company/Scan-Progress
+
 ########################Robots-EndPoints
 echo "################Robots-EndPoints"
 mkdir  -p /sec/root/Work/Company/$company/IP/Robots-EndPoints/
@@ -119,5 +111,20 @@ else
 fi
 whatweb --input-file=/sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | anew /sec/root/Work/Company/$company/IP/Shodan_IP/Technologies
 wafw00f --input-file=/sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | anew /sec/root/Work/Company/$company/IP/Shodan_IP/Waff
+
+
+echo "Swagger Url Extractor"
+cat  /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt  | nuclei -t /sec/root/nuclei-templates/http/exposures/apis/swagger-api.yaml -o  /sec/root/Work/Company/$company/IP/Swagger-api/Swagger-IP.txt
+echo "-IP DirSearch Normal Mode"| anew /sec/root/Work/Company/$company/Scan-Progress
+
+echo "Nuclei JavaScript"
+cat /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
+echo "Nuclei JavaScript" | anew /sec/root/Work/Company/$company/Scan-Progress
+
+
+echo "Start Nuclei Ip Scan"
+cat /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | nuclei -t /sec/root/nuclei-templates/ -o /sec/root/Work/Company/$company/IP/Nuclei/IP.txt
+echo "-IP Nuclei-Full-Scan :Done" | anew /sec/root/Work/Company/$company/Scan-Progress
+
 }
 hello_world
