@@ -39,8 +39,8 @@ cut -d' ' -f3 /sec/root/Work/Company/$company/IP/Trash/Final-Result | grep -oP  
 echo -e "\e[94mStart Filtering \e[0m"
 cat /sec/root/Work/Company/$company/IP/Trash/IP.txt | httpx -o /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt
 
-file="/home/muhanad/Work/Work/Web Application Penetration Testing/Recon/Script/Company/$company/IP/Shodan_IP/IP-Final.txt"
-directory="/home/muhanad/Work/Work/Web Application Penetration Testing/Recon/Script/Company/$company/IP/"
+file="/sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt"
+directory="/sec/root/Work/Company/$company/IP/Shodan_IP/"
 
 if [ -s "$file" ]; then
     # File is not empty, continue with the rest of the script
@@ -77,7 +77,7 @@ httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt -mc 403,401 -
 httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt -mc 304 -o  /sec/root/Work/Company/$company/IP/403_401_304_Bypass/IP-304.txt
 
 echo "Start Nuclei Ip Scan"
-cat /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | nuclei -t /home/muhanad/nuclei-templates/ -o /sec/root/Work/Company/$company/IP/Nuclei/IP.txt
+cat /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt | nuclei -t /sec/root/nuclei-templates/ -o /sec/root/Work/Company/$company/IP/Nuclei/IP.txt
 echo "-IP Nuclei-Full-Scan :Done" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 echo "Start GoSpider"
@@ -120,7 +120,7 @@ echo -e "\e[36mSourceMappingURL IP count: \e[32m$(cat /sec/root/Work/Company/$co
 echo "sourceMappingURL" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 echo "Nuclei JavaScript"
-cat /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /home/muhanad/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
+cat /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/IP/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
 echo "Nuclei JavaScript" | anew /sec/root/Work/Company/$company/Scan-Progress
 
 ########################Exposure Check
@@ -134,7 +134,7 @@ httpx -l /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt --path "/site
 echo "-IP SiteMap Url Extractor:Done"| anew /sec/root/Work/Company/$company/Scan-Progress
 ########################swagger Url Extractor
 echo "Swagger Url Extractor"
-cat  /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt  | nuclei -t /home/muhanad/nuclei-templates/http/exposures/apis/swagger-api.yaml -o  /sec/root/Work/Company/$company/IP/Swagger-api/Swagger-IP.txt
+cat  /sec/root/Work/Company/$company/IP/Shodan_IP/IP-Final.txt  | nuclei -t /sec/root/nuclei-templates/http/exposures/apis/swagger-api.yaml -o  /sec/root/Work/Company/$company/IP/Swagger-api/Swagger-IP.txt
 echo "-IP DirSearch Normal Mode"| anew /sec/root/Work/Company/$company/Scan-Progress
 ########################Robots-EndPoints
 echo "################Robots-EndPoints"
