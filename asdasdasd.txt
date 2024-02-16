@@ -1,0 +1,311 @@
+#!/bin/bash
+trap "echo 'Skipping Tools...'" SIGINT
+echo -e "
+           _ _      _____            __ 
+     /\   | | |    |_   _|          /_ |
+    /  \  | | |______| |  _ __ ______| |
+   / /\ \ | | |______| | | '_ \______| |
+  / ____ \| | |     _| |_| | | |     | |
+ /_/    \_\_|_|    |_____|_| |_|     |_|
+                                                                 
+"
+############################################################Create Files
+echo -e "\e[94mEnter the organisation name (E.g.,Facebook): \e[0m"
+read company
+
+mkdir  -p /sec/root/Work/Company/$company/
+touch /sec/root/Work/Company/$company/Scan-Progress
+
+mkdir -p /sec/root/Work/Company/$company/Subdomains/ 
+cd /sec/root/Work/Company/$company/Subdomains/
+mkdir  -p Subdomains/ API_EndPoint/  Nuclei/ Wayback_URLS/ Trash/ Java_Script/ Nuclei/ Sitemap-Urls/ Swagger-api/ 
+
+
+echo "#######################################################"| anew /sec/root/Work/Company/$company/Scan-Progress
+###############################################################################
+echo -e "\e[94mStarting Subdomain-Enumeration:\e[0m"
+hello_world () {
+echo "AssetFinder"
+echo "[+]Subdomains:"| anew /sec/root/Work/Company/$company/Scan-Progress
+cat '/sec/root/Work/domains.txt' | assetfinder --subs-only  | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt
+echo -e "\e[36mAssetFinder count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt | tr '[:upper:]' '[:lower:]'| anew |grep -v " "|grep -v "@" | grep "\."| wc -l)\e[0m"
+#################### FINDOMAIN ENUMERATION ######################
+echo "Findomain Starts"
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+findomain -t $x -q >> /tmp/findomain-$company.txtls
+cat /tmp/findomain-$company.txtls |anew |grep -v " "|grep -v "@" | grep "\." | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/findomains.txtls
+done
+echo -e "\e[36mFindomain count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Trash/findomains.txtls | tr '[:upper:]' '[:lower:]'| anew |grep -v " "|grep -v "@" | grep "\."| wc -l)\e[0m"
+#################### SUBFINDER2 ENUMERATION ######################
+echo "SubFinder"
+subfinder -dL '/sec/root/Work/domains.txt' -o /sec/root/Work/Company/$company/Subdomains/Trash/subfinder.txt
+#################### Amass ENUMERATION ######################
+echo "Amass For Subdomains"
+amass enum -passive -norecursive -noalts -df '/sec/root/Work/domains.txt'  -o /sec/root/Work/Company/$company/Subdomains/Trash/amassss.txt
+echo -e "\e[36mAmass count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Trash/amassss.txt | tr '[:upper:]' '[:lower:]'| anew | wc -l)\e[0m"
+#### CERTIFICATE ENUMERATION ##########
+echo "CERTIFICATE ENUMERATION"
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+        Domain() {
+        requestsearch="$(curl -s "https://crt.sh?q=%.$x&output=json")"
+                 
+                         echo $requestsearch >> /tmp/req-$company.txt
+                         cat /tmp/req-$company.txt | jq ".[].common_name,.[].name_value"| cut -d'"' -f2 | sed 's/\\n/\n/g' | sed 's/\*.//g'| sed -r 's/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4})//g' | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/crt.txt
+                         echo -e "\e[32m[+]\e[0m Total Save will be \e[31m"$(cat /sec/root/Work/Company/$company/Subdomains/Trash/crt.txt | wc -l)"\e[0m Domain only"
+                         
+}
+done
+Domain
+
+################################
+echo "Waybackurls For Domains"
+cat '/sec/root/Work/domains.txt' | waybackurls | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew -q  /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
+echo "Done Wayback"
+echo -e "\e[36mWayback count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | tr '[:upper:]' '[:lower:]'| anew | wc -l)\e[0m"
+#################### Wayback ENUMERATION######################
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt |awk -F '/' '{print $3}' | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | sort -u | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/wayback
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.json$" | httpx -mc 200 | anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-json.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "\.txt$" | httpx -mc 200| anew /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/wayback-txt.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.tmp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$"| httpx  -mc 200,401,403,304 -o /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Exposed-Files.txt
+##########################Final_Sub Subdomains.txt Count  ##################################33
+echo -e "\e[34mSub-Subdomain Start............ \e[0m"
+touch /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt
+touch /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+python3 /sec/root/Work/ctfr -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt
+done
+cat /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Sub.txt | grep -i "*." | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | egrep -v "^.[^.]+\.[a-zA-Z]{3}$|^.[^.]+\.[a-zA-Z]{2}\.[a-zA-Z]{2}$" | anew -q  /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt
+echo -e "\e[36mSub-Sub count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | tr '[:upper:]' '[:lower:]'| anew |grep -v " "|grep -v "@" | grep "\."| wc -l)\e[0m"
+
+##########################Final_Subdomains.txt Count  ##################################33
+echo "Sub-Subdomain ctftr"
+for x in $(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt)
+do
+python3 /sec/root/Work/ctfr -d $x | grep -i "*" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt
+done
+######Subdomain-Enumeration {amass,assetfinder,waybackurls}
+echo "Sub-Subdomain SubFinder"
+subfinder -dL /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | anew -q  /sec/root/Work/Company/$company/Subdomains/Trash/subfinder-sub.txt
+echo "Sub-Subdomain AssetFinder"
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | assetfinder --subs-only | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt
+echo "Sub-Subdomain Waybackurls"
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt | waybackurls | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew -q /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
+cat  /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | awk -F '/' '{print $3}' | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/wayback-sub.txt
+
+echo "Last Amass"
+amass enum -passive -norecursive -noalts -df /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt -o /sec/root/Work/Company/$company/Subdomains/Trash/amassss-new.txt
+
+echo "Sub-Subdomain SubFinder"
+subfinder -dL /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt -silent  | anew -q  /sec/root/Work/Company/$company/Subdomains/Trash/subfinder-sub.txt
+echo "Sub-Subdomain AssetFinder"
+cat /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt | assetfinder --subs-only | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt
+echo "Sub-Subdomain Waybackurls"
+cat /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt | waybackurls | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew -q /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt
+cat  /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | awk -F '/' '{print $3}' | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]" | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/wayback-sub.txt
+
+echo "Last Amass"
+amass enum -passive -norecursive -noalts -df /sec/root/Work/Company/$company/Subdomains/Trash/Final-Sub-Subss.txt -o /sec/root/Work/Company/$company/Subdomains/Trash/amassss-new.txt
+cat /sec/root/Work/Company/$company/Subdomains/Trash/subfinder-sub.txt /sec/root/Work/Company/$company/Subdomains/Trash/amassss-new.txt  /sec/root/Work/Company/$company/Subdomains/Trash/assetfinder.txt | sort -u | anew -q /tmp/subs-subs-$company
+echo "Amass Last"
+amass enum -passive -norecursive -noalts -df /tmp/subs-subs-$company -o /sec/root/Work/Company/$company/Subdomains/Trash/amassss-new-last.txt
+###############################################################
+echo "CERTIFICATE ENUMERATION"
+for x in $(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final-Sub-Sub.txt)
+do
+        Domain() {
+        requestsearch="$(curl -s "https://crt.sh?q=%.$x&output=json")"
+                 
+                         echo $requestsearch >> req.txt
+                         cat req.txt | jq ".[].common_name,.[].name_value"| cut -d'"' -f2 | sed 's/\\n/\n/g' | sed 's/\*.//g'| sed -r 's/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4})//g' | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/crt.txt
+                         echo -e "\e[32m[+]\e[0m Total Save will be \e[31m"$(cat /sec/root/Work/Company/$company/Subdomains/Trash/crt.txt | wc -l)"\e[0m Domain only"
+                         
+}
+done
+Domain
+##########################Final_Subdomains.txt Count  ##################################33
+echo "Started Filtering Subdomains"
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+cat /sec/root/Work/Company/$company/Subdomains/Trash/* | grep -i $x | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]"  | anew -q /sec/root/Work/Company/$company/Subdomains/Trash/final-result
+done
+###################################################################################################################################################
+echo "Last Final_Subdomains"
+cat /sec/root/Work/Company/$company/Subdomains/Trash/final-result | anew -q /sec/root/Work/Company/$company/Subdomains/Subdomains/Final_Subdomains.txt
+##################################################################################################
+echo "Final_Subdomains:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
+echo "FTP+SSH"
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final_Subdomains.txt  | grep -i 'ssh\|ftp' | anew -q /sec/root/Work/Company/$company/Subdomains/Subdomains/ssh_ftp.txt
+echo -e "\e[36mFinal Subdomains count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final_Subdomains.txt | tr '[:upper:]' '[:lower:]'| anew | grep -v " "|grep -v "@" | grep "\." | wc -l)\e[0m"
+echo "Subdomains-Collecting:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
+#################### SUBDOMAIN Live Filtering######################
+echo "-Live Subdomains Filtering"
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Final_Subdomains.txt | httpx | anew -q  /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt
+echo -e "\e[36mLive_Subdomains count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt | tr '[:upper:]' '[:lower:]'| anew |grep -v " "|grep -v "@" | grep "\."| wc -l)\e[0m"
+echo "-Live_Subdomains:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
+
+echo "403 Bypass"
+httpx -l /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt -mc 403,401,304 -o /sec/root/Work/Company/$company/Subdomains/Subdomains/401_403_304.txt
+
+###############################################################GF
+mkdir -p /sec/root/Work/Company/$company/Subdomains/Parameter/
+mkdir -p /sec/root/Work/Company/$company/Subdomains/GF/
+for x in $(cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt)
+do
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep -i "$x" | anew -q /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt
+done
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf xss | anew -q /sec/root/Work/Company/$company/Subdomains/GF/xss.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf ssrf | anew -q /sec/root/Work/Company/$company/Subdomains/GF/ssrf-lfi.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf lfi | anew -q /sec/root/Work/Company/$company/Subdomains/GF/ssrf-lfi.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf sqli | anew -q /sec/root/Work/Company/$company/Subdomains/GF/sqli_ssti_rce.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf rce | anew -q /sec/root/Work/Company/$company/Subdomains/GF/sqli_ssti_rce.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf ssti | anew -q /sec/root/Work/Company/$company/Subdomains/GF/sqli_ssti_rce.txt
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | gf interestingEXT | httpx -mc 200,403 | anew -q /sec/root/Work/Company/$company/Subdomains/GF/interestin-files.txt
+
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt| grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.tmp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$" | anew -q /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Epoueres.txt
+#################### Javascript ENUMERATION ######################
+echo "Collect API ENUMERATION"
+#######Collect API ###########################
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt  | grep -i "/api/" | anew -q /sec/root/Work/Company/$company/Subdomains/API_EndPoint/Api-EndPoint.txt
+#######Secrets Collect ###########################
+echo "JavaScript Secrets Collect"
+mkdir -p /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | grep '\.js$' | sort -u | anew -q /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-files-wayback-GAU.txt
+#######JavaScript 200 OK ###########################
+cat /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-files-wayback-GAU.txt | sort -u | httpx -content-type | grep 'application/javascript' | cut -d' ' -f1 | anew -q /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt
+echo -e "\e[36mJavaScript ENUMERATION Count: \e[32m$(cat /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt | tr '[:upper:]' '[:lower:]'| anew | grep -v " "|grep -v "@" | grep "\." | wc -l)\e[0m"
+echo "-JavaScript_Collect_Scan:Done" | anew /sec/root/Work/Company/$company/Scan-Progress
+echo "Extract EndPoints"
+curl -s -k … $(cat /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt) | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*" | anew /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/EndPoints-Secret.txt
+echo "Extract EndPoint-Dir-Scan"
+curl … $(cat /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt) | grep -aoP "(?<=(\"|\'|\`))\/[a-zA-Z0-9_?&=\/\-\#\.]*(?=(\"|\'|\`))" | anew  -q /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/EndPoint-Dir-Scan.txt
+echo "Started Filtering Subdomains"
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+cat /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/EndPoints-Secret.txt | grep -i $x | anew -q /sec/root/Work/Company/$company/Subdomains/API_EndPoint/EndPoints-JavaScript.txt
+done
+echo "Extract Soucre-Map-use unwebpack-sourcemap/"
+httpx -l /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt -match-string "sourceMappingURL" -o /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/javascript-map.txt 
+
+echo "Nuclei Secrets Start token-exposures"
+cat /sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt  | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/nuclei-javascript.txt
+
+#Nuclei
+echo "Nuclei Scan ......................................"
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt | nuclei -t /sec/root/nuclei-templates/ -o /sec/root/Work/Company/$company/Subdomains/Nuclei/nuclei.txt
+echo "Live_Subdomains-Nuclei:Done"| anew /sec/root/Work/Company/$company/Scan-Progress
+
+
+echo "Start Crawling ......................................"
+###############WEB_CRAWLING
+echo -e "\e[94mWEB_CRAWLING............ \e[0m"
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/hakrawler/
+cd /sec/root/Work/Company/$company/WEB_CRAWLING/
+
+echo -e "\e[94mGithub-Endpoints Scan............ \e[0m"
+echo "GoSpider-Endpoints Scan"
+if ! gospider -S /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt -d 10 -c 20 -t 50 -K 3 --robots --sitemap --no-redirect -a -w --blacklist ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" --include-subs -o '/sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider; then
+    echo "Skipping gospider..."
+  fi
+
+  ##########################hakrawler
+  echo "hakrawler Scan"
+  if ! cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt | hakrawler | egrep -v ".(eot|jpg|jpeg|gif|css|tif|tiff|png|ttf|otf|woff|woff2|ico|svg)" | anew '/sec/root/Work/Company/$company/WEB_CRAWLING/hakrawler/hakrawler.txt; then
+    echo "Skipping hakrawler..."
+  fi
+###########################
+echo "SourceWolf Scan"
+cd /sec/root/Work/SourceWolf/
+python3 /sec/root/Work/SourceWolf/sourcewolf.py -l /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt -o /sec/root/Work/Company/$company/WEB_CRAWLING/sourcewolf/ -c /sec/root/Work/Company/$company/WEB_CRAWLING/sourcewolf/crawl_output
+###############Start Working
+cat /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider/* | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*" | anew -q  /tmp/GoSpider-$company.Txt
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+cat /tmp/GoSpider-$company.Txt | grep -i $x | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt
+done
+cat /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt  | grep -i "/api/" | sort -u | httpx  | anew -q /sec/root/Work/Company/$company/Subdomains/API_EndPoint/Api-EndPoint.txt
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/Final-EndPoints/
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/sourcewolf/*/* /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt   /sec/root/Work/Company/$company/WEB_CRAWLING/hakrawler/hakrawler.txt | anew -q /tmp/Ends-$company
+cat /tmp/Ends-$company | grep -i '\.php$\|\.html$\|\.do$\|\.asp$\|\.aspx$\|\.action$'  | anew -q  /sec/root/Work/Company/$company/WEB_CRAWLING/Final-EndPoints/GoSpider-Endpointss.txt
+###############################################################GF
+mkdir -p /sec/root/Work/Company/$company/Subdomains/GF/
+cat /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt | grep -oP  "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]"  | anew -q /tmp/lssss-$company
+for x in $(cat /tmp/lssss-$company)
+do
+cat /tmp/Ends-$company | grep -i "$x" | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*" | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt
+done
+########################################################################GF
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/GF/
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf xss | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/xss.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf ssrf | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/ssrf-lfi.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf lfi | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/ssrf-lfi.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf sqli | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/sqli_ssti_rce.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf rce | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/sqli_ssti_rce.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf ssti | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/sqli_ssti_rce.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/GF/Ends.txt | gf interestingEXT | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/GF/interestin-files.txt
+echo "################Robots-EndPoints"
+mkdir  -p /sec/root/Work/Company/$company/Subdomains/Robots-EndPoints/
+cd /sec/root/Work/Company/$company/Subdomains/Robots-EndPoints/
+cat  /sec/root/Work/Company/$company/Subdomains/Subdomains/Live_Subdomains.txt | roboxtractor -m 0  | anew -q /sec/root/Work/Company/$company/Subdomains/Robots-EndPoints/Subs.txt
+
+########################Exposure Check
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/Exposures/
+cat /tmp/Ends-$company | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.tmp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$" | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/Exposures/Exposures.txt
+##############JavaScript
+echo "Start JavaScript"
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/
+mkdir -p /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/
+cat /sec/root/Work/Company/$company/WEB_CRAWLING/sourcewolf/*/* /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt   /sec/root/Work/Company/$company/WEB_CRAWLING/hakrawler/hakrawler.txt /sec/root/Work/Company/$company/WEB_CRAWLING/sourcewolf/*/* | sort -u | grep -i '\.js$'| httpx -silent -content-type | grep 'application/javascript' | cut -d' ' -f1 | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200.txt
+echo "Started Filtering Subdomains-JavaScript"
+for x in $(cat '/sec/root/Work/domains.txt')
+do
+cat /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200.txt | grep -i $x | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt
+done
+
+# Set the file paths
+javascript200_final="/sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt"
+javascript200_subdomains="/sec/root/Work/Company/$company/Subdomains/Java_Script/javascript-200.txt"
+output_file="/tmp/javascript-200-$company"
+
+# Check if the files exist
+if [ ! -f "$javascript200_final" ] || [ ! -f "$javascript200_subdomains" ]; then
+    echo "One or more input files do not exist."
+    exit 1
+fi
+
+# Use grep to find URLs in JavaScript-200-Final.txt that are not in javascript-200.txt
+grep -Fxvf "$javascript200_subdomains" "$javascript200_final" > "$output_file"
+
+echo "Results saved in: $output_file"
+cat $output_file >/sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt
+
+#Extract EndPoints
+curl … $(cat /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt) | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*"  | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/javascript-ends.txt
+cat  /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/javascript-ends.txt | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*" | anew -q  /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/EndPoints-Secret.txt
+
+echo "Dir-Export"
+curl … $(cat /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt) | grep -aoP "(?<=(\"|\'|\`))\/[a-zA-Z0-9_?&=\/\-\#\.]*(?=(\"|\'|\`))" | anew -q /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/EndPoint-Dir-Scan.txt
+
+echo "sourceMappingURL"
+httpx -silent -l /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt -match-string "sourceMappingURL" | anew -q  /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/javascript-map.txt
+
+echo "Paths EndPoints"
+mkdir -p /sec/root/Work/Company/$company/Subdomains/EndPoints 
+cat /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/EndPoint-Dir-Scan.txt /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/EndPoint-Dir-Scan.txt /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | unfurl paths | grep -i '\(\.php$\|\.html$\|\.do$\|\.asp$\|\.aspx$\)' | anew -q /sec/root/Work/Company/$company/Subdomains/EndPoints/EndPoints-Paths.txt
+cat /sec/root/Work/Company/$company/Subdomains/Java_Script/Secrets/EndPoint-Dir-Scan.txt /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/EndPoint-Dir-Scan.txt /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU.txt | unfurl paths | grep -i "/api/" | anew -q /sec/root/Work/Company/$company/Subdomains/EndPoints/EndPoints-Paths.txt
+
+echo "Parameter Extraction"
+grep -oP 'https?://[^? ]+\?\S+' /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt | anew -q /sec/root/Work/Company/$company/Subdomains/Parameter/Parameters.txt
+grep -oP 'https?://[^? ]+\?\S+' /sec/root/Work/Company/$company/WEB_CRAWLING/GoSpider-Final.Txt | anew -q /sec/root/Work/Company/$company/Subdomains/Parameter/Parameters.txt
+
+echo "EndPoints"
+cat /sec/root/Work/Company/$company/Subdomains/Wayback_URLS/Wayback_URLS_GAU_Live.txt /sec/root/Work/Company/$company/WEB_CRAWLING/Final-EndPoints/GoSpider-Endpointss.txt | sort -u | grep -i '\.php$\|\.html$\|\.do$\|\.asp$\|\.aspx$\|\.action$'| anew -q /sec/root/Work/Company/$company/Subdomains/Parameter/Endpointss.txt
+
+echo "Nuclei"
+cat /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/JavaScript-200-Final.txt | nuclei -t /sec/root/nuclei-templates/http/exposures/ -o /sec/root/Work/Company/$company/WEB_CRAWLING/JavaScript/Secrets/nuclei-javascript.txt
+
+}
+hello_world
